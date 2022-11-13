@@ -10,7 +10,9 @@ pub struct PlayerBundle {
 #[derive(Component)]
 pub struct Player;
 
-pub struct PlayerRes(pub Entity);
+#[derive(Resource)]
+struct PlayerEntity(Entity);
+
 
 pub trait Manage {
 	fn setup(commands: Commands,
@@ -23,7 +25,7 @@ pub trait Manage {
 impl Manage for Player {
 	fn setup(mut commands: Commands,
 			 asset_server: Res<AssetServer>) {
-		let player = commands.spawn_bundle(PlayerBundle {
+		let player = commands.spawn(PlayerBundle {
 			player: Player,
 			sprite: SpriteBundle {
 				transform: Transform::from_xyz(0.0, 0.0, 0.0),
@@ -31,7 +33,7 @@ impl Manage for Player {
 				..default()
 			}
 		}).id();
-		commands.insert_resource(PlayerRes(player));
+		commands.insert_resource(PlayerEntity(player));
 	}
 
 	fn update(mut player_query: Query<&mut Transform, With<Player>>,
@@ -55,5 +57,9 @@ impl Manage for Player {
 fn get_angle(a: Vec2, b: Vec2) -> f32 {
 	let op = b.y - a.y;
 	let adj = b.x - a.x;
-	return (op/adj).atan();
+	return if (op/adj).atan().is_nan() {
+		0.0
+	} else {
+		(op / adj).atan()
+	}
 }
